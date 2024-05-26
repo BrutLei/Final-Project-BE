@@ -3,10 +3,7 @@ import express from 'express'
 
 export const createCourse = async (req: express.Request, res: express.Response) => {
   try {
-    // const { userId, title } = req.body
-    const userId = req.body.userId
-    const title = req.body.title
-    console.log(req.body)
+    const { userId, title } = req.body
     if (!userId) {
       return res.status(401).send('Unauthorized')
     }
@@ -20,7 +17,8 @@ export const createCourse = async (req: express.Request, res: express.Response) 
 
 export const findCourse = async (req: express.Request, res: express.Response) => {
   try {
-    const { courseId } = req.body
+    const { courseId } = req.params
+
     const course = await db.course.findUnique({ where: { id: courseId } })
     if (course) {
       return res.status(201).json(course)
@@ -35,7 +33,8 @@ export const findCourse = async (req: express.Request, res: express.Response) =>
 
 export const updateCourse = async (req: express.Request, res: express.Response) => {
   try {
-    const { courseId, value, userId } = req.body
+    const { courseId } = req.params
+    const { data, userId } = req.body
 
     if (!userId) {
       return res.status(401).send('Unaothorized')
@@ -43,7 +42,7 @@ export const updateCourse = async (req: express.Request, res: express.Response) 
 
     const course = await db.course.update({
       where: { id: courseId, userId: userId },
-      data: { ...value }
+      data: { ...data }
     })
     return res.status(201).json(course)
   } catch (error) {

@@ -3,6 +3,6 @@ import express from 'express'
 
 const coursesRoute = express.Router()
 
-coursesRoute.post('/', createCourse).get(':/courseId', findCourse).put('/:courseId', updateCourse)
+coursesRoute.post('/', createCourse).get('/:courseId', findCourse).patch('/:courseId', updateCourse)
 
 export default coursesRoute

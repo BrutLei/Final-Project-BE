@@ -1,6 +1,6 @@
+import { db } from '@/utilz/db'
 import express from 'express'
 import fs from 'fs'
-import { exists } from 'node:fs'
 import multer from 'multer'
 import path from 'path'
 
@@ -30,12 +30,31 @@ const videoUpload = multer({ storage: videoStorage })
 const cbUploadImage = thumbnailUpload.single('thumbnail')
 const cbUploadVideo = videoUpload.array('videos')
 
-uploadRoute.post('/upload-image', cbUploadImage, (req, res) => {
-  const file = req.file
-  if (file) {
-    res.send(file)
-  } else {
-    res.status(400).send('No file uploaded')
+uploadRoute.patch('/:courseId/upload-image', cbUploadImage, async (req: express.Request, res: express.Response) => {
+  try {
+    const file = req.file
+    const courseId = req.params.courseId
+    const { userId } = req.body
+
+    console.log(courseId)
+
+    if (!userId) {
+      return res.status(401).send('Unauthorized')
+    }
+    if (!file) {
+      return res.status(400).send('No file uploaded')
+    }
+
+    const imagePath = req.file?.path
+
+    const course = await db.course.update({
+      where: { id: courseId, userId: userId },
+      data: { imageUrl: imagePath }
+    })
+    return res.status(201).json(course)
+  } catch (error) {
+    console.log('[CourseController][updateCourse][Error]', error)
+    return res.status(500).send('Internal Server Error')
   }
 })
 uploadRoute.post('/upload-video', cbUploadVideo, (req, res) => {
@@ -47,16 +66,30 @@ uploadRoute.post('/upload-video', cbUploadVideo, (req, res) => {
   }
 })
 
-uploadRoute.delete('/delete-image/:filename', (req, res) => {
-  console.log('deleting image')
-  const filepath = path.join(__dirname, `../../uploads/thumbnails/${req.params.filename}`)
-  console.log(filepath)
-  // return res.status(200)
+uploadRoute.delete('/delete-image', (req: express.Request, res: express.Response) => {
+  const imageUrl = req.body.imageUrl
+  const filepath = path.join(__dirname, `../../${imageUrl}`)
   if (fs.existsSync(filepath)) {
-    console.log('file exists')
+    fs.unlink(filepath, (err) => {
+      if (err) {
+        console.log(err)
+        return res.status(500).send('Internal Server Error')
+      }
+    })
+    if (!fs.existsSync(filepath)) {
+      return res.status(200).send('File deleted')
+    }
   } else {
-    console.log('file does not exist')
+    return res.status(404).send('File not found')
   }
+  return res.status(404).send('File not found')
 })
+
+// uploadRoute.get('/get-image/:imageUrl', (req: express.Request, res: express.Response) => {
+//   const imageUrl = req.params.imageUrl
+//   express.static(__dirname + `../../${imageUrl}`)
+// })
+
+uploadRoute.use('/images', express.static(path.join(__dirname, '../..')))
 
 export default uploadRoute

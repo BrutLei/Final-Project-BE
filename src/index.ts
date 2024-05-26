@@ -16,7 +16,7 @@ app.get('/', (req: Request, res: Response) => {
   res.send('<h1>Hello World</h1>')
 })
 
-app.use('/', uploadRoute)
+app.use('/api/courses', uploadRoute)
 app.use('/api/courses', coursesRoute)
 
 app.listen(port, () => {
