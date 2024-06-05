@@ -3,4 +3,6 @@ dist/
 
 /.env
 
-src/uploads/*
+src/uploads/attachments/
+src/uploads/thumbnails/
+src/uploads/videos/
