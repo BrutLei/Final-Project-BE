@@ -24,11 +24,24 @@ const videoStorage = multer.diskStorage({
   }
 })
 
+const attachmentStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const path = `uploads/attachments/${req.params['courseId']}`
+    fs.mkdirSync(path, { recursive: true })
+    return cb(null, path)
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${file.originalname}`)
+  }
+})
+
 const thumbnailUpload = multer({ storage: imageStorage })
 const videoUpload = multer({ storage: videoStorage })
+const attachmentUpload = multer({ storage: attachmentStorage })
 
 const cbUploadImage = thumbnailUpload.single('thumbnail')
 const cbUploadVideo = videoUpload.array('videos')
+const cbUploadAttachment = attachmentUpload.array('attachments')
 
 uploadRoute.patch('/:courseId/upload-image', cbUploadImage, async (req: express.Request, res: express.Response) => {
   try {
@@ -36,8 +49,20 @@ uploadRoute.patch('/:courseId/upload-image', cbUploadImage, async (req: express.
     const courseId = req.params.courseId
     const { userId } = req.body
 
-    console.log(courseId)
-
+    if (!courseId) {
+      return res.status(400).send('No course id provided')
+    } else {
+      const course = await db.course.findUnique({ where: { id: courseId } })
+      const existImage = course?.imageUrl
+      if (existImage) {
+        const filepath = path.join(__dirname, `../../${existImage}`)
+        if (fs.existsSync(filepath)) {
+          fs.unlinkSync(filepath)
+        } else {
+          console.log('File not found')
+        }
+      }
+    }
     if (!userId) {
       return res.status(401).send('Unauthorized')
     }
@@ -57,6 +82,7 @@ uploadRoute.patch('/:courseId/upload-image', cbUploadImage, async (req: express.
     return res.status(500).send('Internal Server Error')
   }
 })
+
 uploadRoute.post('/upload-video', cbUploadVideo, (req, res) => {
   const files = req.files
   if (files) {
@@ -66,8 +92,33 @@ uploadRoute.post('/upload-video', cbUploadVideo, (req, res) => {
   }
 })
 
-uploadRoute.delete('/delete-image', (req: express.Request, res: express.Response) => {
-  const imageUrl = req.body.imageUrl
+uploadRoute.delete('/delete-image/:courseId', async (req: express.Request, res: express.Response) => {
+  const courseId = req.params.courseId
+  if (!courseId) {
+    return res.status(400).send('No course id provided')
+  }
+  const course = await db.course.findUnique({ where: { id: courseId } })
+  const imageUrl = course?.imageUrl
+  if (!imageUrl) {
+    return res.status(404).send('No image found')
+  } else {
+    const filepath = path.join(__dirname, `../../${imageUrl}`)
+    if (fs.existsSync(filepath)) {
+      fs.unlinkSync(filepath)
+      if (!fs.existsSync(filepath)) {
+        try {
+          await db.course.update({
+            where: { id: courseId },
+            data: { imageUrl: null }
+          })
+          return res.status(200).send('File deleted')
+        } catch (error) {
+          console.log('[CourseController][deleteImage][Error]', error)
+          return res.status(500).send('Internal Server Error')
+        }
+      }
+    }
+  }
   const filepath = path.join(__dirname, `../../${imageUrl}`)
   if (fs.existsSync(filepath)) {
     fs.unlink(filepath, (err) => {
@@ -85,10 +136,52 @@ uploadRoute.delete('/delete-image', (req: express.Request, res: express.Response
   return res.status(404).send('File not found')
 })
 
-// uploadRoute.get('/get-image/:imageUrl', (req: express.Request, res: express.Response) => {
-//   const imageUrl = req.params.imageUrl
-//   express.static(__dirname + `../../${imageUrl}`)
-// })
+uploadRoute.patch(
+  '/:courseId/upload-attachments',
+  cbUploadAttachment,
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const courseId = req.params.courseId
+      const { userId } = req.body
+      const files = req.files
+      console.log(files)
+
+      if (!courseId) {
+        return res.status(400).send('No course id provided')
+      } else {
+        const attachments = await db.attachment.findMany({ where: { courseId: courseId } })
+      }
+      if (!userId) {
+        return res.status(401).send('Unauthorized')
+      }
+      if (!files) {
+        return res.status(400).send('No file uploaded')
+      }
+      if (files) {
+        ;(files as Express.Multer.File[]).forEach(async (file: Express.Multer.File) => {
+          const filePath = file.path
+          try {
+            fs.accessSync(filePath, fs.constants.F_OK)
+            return res.status(400).send('File already exists')
+          } catch (error) {
+            await db.attachment.create({
+              data: {
+                courseId: courseId,
+                name: file.originalname,
+                url: file.path
+              }
+            })
+          }
+        })
+      }
+
+      return res.status(201).json()
+    } catch (error) {
+      console.log('[CourseController][updateCourse][Error]', error)
+      return res.status(500).send('Internal Server Error')
+    }
+  }
+)
 
 uploadRoute.use('/images', express.static(path.join(__dirname, '../..')))
 

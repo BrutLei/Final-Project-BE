@@ -37,7 +37,7 @@ export const updateCourse = async (req: express.Request, res: express.Response) 
     const { data, userId } = req.body
 
     if (!userId) {
-      return res.status(401).send('Unaothorized')
+      return res.status(401).send('Unauthorized')
     }
 
     const course = await db.course.update({
