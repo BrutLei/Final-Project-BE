@@ -3,4 +3,6 @@ dist/
 
 /.env
 
+
 uploads/
+uploads/thumbnails/
