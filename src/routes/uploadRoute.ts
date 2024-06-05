@@ -31,7 +31,7 @@ const attachmentStorage = multer.diskStorage({
     return cb(null, path)
   },
   filename: (req, file, cb) => {
-    cb(null, `${file.originalname}`)
+    cb(null, `${Date.now()}-${file.originalname}`)
   }
 })
 
@@ -144,12 +144,9 @@ uploadRoute.patch(
       const courseId = req.params.courseId
       const { userId } = req.body
       const files = req.files
-      console.log(files)
 
       if (!courseId) {
         return res.status(400).send('No course id provided')
-      } else {
-        const attachments = await db.attachment.findMany({ where: { courseId: courseId } })
       }
       if (!userId) {
         return res.status(401).send('Unauthorized')
@@ -159,11 +156,7 @@ uploadRoute.patch(
       }
       if (files) {
         ;(files as Express.Multer.File[]).forEach(async (file: Express.Multer.File) => {
-          const filePath = file.path
           try {
-            fs.accessSync(filePath, fs.constants.F_OK)
-            return res.status(400).send('File already exists')
-          } catch (error) {
             await db.attachment.create({
               data: {
                 courseId: courseId,
@@ -171,11 +164,13 @@ uploadRoute.patch(
                 url: file.path
               }
             })
+          } catch (error) {
+            console.log('[UploadRoute][Error]', error)
+            return res.status(500).send('Internal Server Error')
           }
         })
       }
-
-      return res.status(201).json()
+      return res.status(201).send('Attachment uploaded')
     } catch (error) {
       console.log('[CourseController][updateCourse][Error]', error)
       return res.status(500).send('Internal Server Error')
