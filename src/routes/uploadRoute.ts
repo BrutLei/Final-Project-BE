@@ -136,6 +136,7 @@ uploadRoute.delete('/delete-image/:courseId', async (req: express.Request, res: 
   return res.status(404).send('File not found')
 })
 
+// /api/attachments/:courseId/upload-attachments
 uploadRoute.patch(
   '/:courseId/upload-attachments',
   cbUploadAttachment,
@@ -179,5 +180,6 @@ uploadRoute.patch(
 )
 
 uploadRoute.use('/images', express.static(path.join(__dirname, '../..')))
+uploadRoute.use('/videos', express.static(path.join(__dirname, '../..')))
 
 export default uploadRoute

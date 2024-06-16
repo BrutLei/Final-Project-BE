@@ -10,6 +10,7 @@ import { coursesRoute } from './routes'
 import { verifyUser } from './middleware/clerk-authenticate'
 import categoriesRoute from './routes/categoriesRoute'
 import attachmentRoute from './routes/attachmentsRoute'
+import chapterRoute from './routes/chapterRoute'
 
 const port = process.env.PORT || 3000
 const app: Application = express()
@@ -31,6 +32,7 @@ app.get('/', (req: Request, res: Response) => {
 // app.use(verifyUser)
 app.use('/api/courses', uploadRoute)
 app.use('/api/courses', coursesRoute)
+app.use('/api/courses', chapterRoute)
 app.use('/api/categories', categoriesRoute)
 app.use('/api/attachments', attachmentRoute)
 
