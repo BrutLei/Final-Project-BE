@@ -11,6 +11,7 @@ import { verifyUser } from './middleware/clerk-authenticate'
 import categoriesRoute from './routes/categoriesRoute'
 import attachmentRoute from './routes/attachmentsRoute'
 import chapterRoute from './routes/chapterRoute'
+import path from 'path'
 
 const port = process.env.PORT || 3000
 const app: Application = express()
@@ -22,7 +23,7 @@ declare global {
   }
 }
 
-app.use(cors({ credentials: true, origin: [String(env.ORIGIN), String(env.ORIGIN2), '*'] }))
+app.use(cors({ credentials: true, origin: [String(env.ORIGIN), String(env.ORIGIN2), 'http://127.0.0.1:5500', '*'] }))
 app.use(express.json())
 app.use(cookieParser())
 

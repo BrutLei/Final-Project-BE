@@ -82,3 +82,76 @@ export const reorderChapters = async (req: express.Request, res: express.Respons
     return res.status(500).send('Internal Server Error')
   }
 }
+
+export const fetchChapter = async (req: express.Request, res: express.Response) => {
+  try {
+    const { courseId, chapterId } = req.params
+
+    const chapter = await db.chapter.findFirst({
+      where: { courseId: courseId, id: chapterId }
+    })
+
+    return res.status(200).json(chapter)
+  } catch (error) {
+    console.log('[ChapterController][fetchChapter][Error]', error)
+    return res.status(500).send('Internal Server Error')
+  }
+}
+
+export const updateChapter = async (req: express.Request, res: express.Response) => {
+  try {
+    const { courseId, chapterId } = req.params
+    const { userId, data } = req.body
+
+    if (!userId) {
+      return res.status(401).send('Unauthorized')
+    }
+
+    const courseOwner = await db.course.findUnique({
+      where: { id: courseId, userId: userId }
+    })
+
+    if (!courseOwner) {
+      return res.status(403).send('Unauthorized')
+    }
+
+    const chapter = await db.chapter.update({
+      where: { id: chapterId },
+      data: { ...data }
+    })
+
+    return res.status(201).json(chapter)
+  } catch (error) {
+    console.log('[ChapterController][updateChapter][Error]', error)
+    return res.status(500).send('Internal Server Error')
+  }
+}
+
+export const removeVideo = async (req: express.Request, res: express.Response) => {
+  try {
+    const { courseId, chapterId } = req.params
+    const { userId } = req.body
+
+    if (!userId) {
+      return res.status(401).send('Unauthorized')
+    }
+
+    const courseOwner = await db.course.findUnique({
+      where: { id: courseId, userId: userId }
+    })
+
+    if (!courseOwner) {
+      return res.status(403).send('Unauthorized')
+    }
+
+    const chapter = await db.chapter.update({
+      where: { id: chapterId },
+      data: { videoUrl: null }
+    })
+
+    return res.status(201).json(chapter)
+  } catch (error) {
+    console.log('[ChapterController][removeVideo][Error]', error)
+    return res.status(500).send('Internal Server Error')
+  }
+}

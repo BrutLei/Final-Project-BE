@@ -3,12 +3,16 @@ import express from 'express'
 import fs from 'fs'
 import multer from 'multer'
 import path from 'path'
+import ffmpeg from 'fluent-ffmpeg'
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 
 const uploadRoute = express.Router()
 
 const imageStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/thumbnails')
+    const path = 'uploads/thumbnails'
+    fs.mkdirSync(path, { recursive: true })
+    cb(null, path)
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`)
@@ -17,7 +21,9 @@ const imageStorage = multer.diskStorage({
 
 const videoStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/videos')
+    const path = 'uploads/videos_temp'
+    fs.mkdirSync(path, { recursive: true })
+    cb(null, path)
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`)
@@ -40,7 +46,7 @@ const videoUpload = multer({ storage: videoStorage })
 const attachmentUpload = multer({ storage: attachmentStorage })
 
 const cbUploadImage = thumbnailUpload.single('thumbnail')
-const cbUploadVideo = videoUpload.array('videos')
+export const cbUploadVideo = videoUpload.single('videos')
 const cbUploadAttachment = attachmentUpload.array('attachments')
 
 uploadRoute.patch('/:courseId/upload-image', cbUploadImage, async (req: express.Request, res: express.Response) => {
@@ -84,11 +90,32 @@ uploadRoute.patch('/:courseId/upload-image', cbUploadImage, async (req: express.
 })
 
 uploadRoute.post('/upload-video', cbUploadVideo, (req, res) => {
-  const files = req.files
-  if (files) {
-    res.send(files)
-  } else {
-    res.status(400).send('No file uploaded')
+  try {
+    const path = req.file?.path
+    const fileName = req.file?.filename
+    const hlsPath = `uploads/videos/hls/${fileName}`
+    fs.mkdirSync(hlsPath, { recursive: true })
+
+    ffmpeg.setFfmpegPath(ffmpegInstaller.path)
+
+    ffmpeg(path, { timeout: 432000 })
+      .addOptions([
+        '-profile:v baseline', // baseline profile (level 3.0) for H264 video codec
+        '-level 3.0',
+        '-start_number 0', // start the first .ts segment at index 0
+        '-hls_time 10', // 10 second segment duration
+        '-hls_list_size 0', // Maxmimum number of playlist entries (0 means all entries/infinite)
+        '-f hls' // HLS format
+      ])
+      .output(`${hlsPath}/${fileName}.m3u8`)
+      .on('end', () => {
+        console.log('Finished processing')
+        return res.status(201).send('Video uploaded')
+      })
+      .run()
+  } catch (error) {
+    console.log('[CourseController][updateCourse][Error]', error)
+    return res.status(500).send('Internal Server Error')
   }
 })
 
