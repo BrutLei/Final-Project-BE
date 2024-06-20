@@ -1,5 +1,7 @@
 import { db } from '@/utilz/db'
 import express from 'express'
+import path from 'path'
+import fs from 'fs'
 
 export const createChapter = async (req: express.Request, res: express.Response) => {
   try {
@@ -130,7 +132,7 @@ export const updateChapter = async (req: express.Request, res: express.Response)
 export const removeVideo = async (req: express.Request, res: express.Response) => {
   try {
     const { courseId, chapterId } = req.params
-    const { userId } = req.body
+    const { userId, videoUrl } = req.body
 
     if (!userId) {
       return res.status(401).send('Unauthorized')
@@ -144,12 +146,21 @@ export const removeVideo = async (req: express.Request, res: express.Response) =
       return res.status(403).send('Unauthorized')
     }
 
-    const chapter = await db.chapter.update({
-      where: { id: chapterId },
-      data: { videoUrl: null }
-    })
+    const videoPath = path.join(__dirname, `../../uploads/videos/hls/${chapterId}`)
+    if (fs.existsSync(videoPath)) {
+      fs.readdirSync(videoPath).forEach((file) => {
+        fs.unlinkSync(`${videoPath}/${file}`)
+      })
+    }
 
-    return res.status(201).json(chapter)
+    if (fs.readdirSync(videoPath).length === 0) {
+      const chapter = await db.chapter.update({
+        where: { id: chapterId },
+        data: { videoUrl: null }
+      })
+
+      return res.status(201).json(chapter)
+    }
   } catch (error) {
     console.log('[ChapterController][removeVideo][Error]', error)
     return res.status(500).send('Internal Server Error')
