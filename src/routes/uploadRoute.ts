@@ -8,7 +8,9 @@ const uploadRoute = express.Router()
 
 const imageStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/thumbnails')
+    const path = 'uploads/thumbnails'
+    fs.mkdirSync(path, { recursive: true })
+    cb(null, path)
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`)
@@ -17,7 +19,9 @@ const imageStorage = multer.diskStorage({
 
 const videoStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/videos')
+    const path = 'uploads/videos_temp'
+    fs.mkdirSync(path, { recursive: true })
+    cb(null, path)
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`)
@@ -40,7 +44,7 @@ const videoUpload = multer({ storage: videoStorage })
 const attachmentUpload = multer({ storage: attachmentStorage })
 
 const cbUploadImage = thumbnailUpload.single('thumbnail')
-const cbUploadVideo = videoUpload.array('videos')
+export const cbUploadVideo = videoUpload.single('videos')
 const cbUploadAttachment = attachmentUpload.array('attachments')
 
 uploadRoute.patch('/:courseId/upload-image', cbUploadImage, async (req: express.Request, res: express.Response) => {
@@ -80,15 +84,6 @@ uploadRoute.patch('/:courseId/upload-image', cbUploadImage, async (req: express.
   } catch (error) {
     console.log('[CourseController][updateCourse][Error]', error)
     return res.status(500).send('Internal Server Error')
-  }
-})
-
-uploadRoute.post('/upload-video', cbUploadVideo, (req, res) => {
-  const files = req.files
-  if (files) {
-    res.send(files)
-  } else {
-    res.status(400).send('No file uploaded')
   }
 })
 
@@ -136,6 +131,7 @@ uploadRoute.delete('/delete-image/:courseId', async (req: express.Request, res: 
   return res.status(404).send('File not found')
 })
 
+// /api/attachments/:courseId/upload-attachments
 uploadRoute.patch(
   '/:courseId/upload-attachments',
   cbUploadAttachment,
@@ -179,5 +175,6 @@ uploadRoute.patch(
 )
 
 uploadRoute.use('/images', express.static(path.join(__dirname, '../..')))
+uploadRoute.use('/videos', express.static(path.join(__dirname, '../..')))
 
 export default uploadRoute
