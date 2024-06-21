@@ -26,16 +26,15 @@ declare global {
 app.use(cors({ credentials: true, origin: [String(env.ORIGIN), String(env.ORIGIN2), 'http://127.0.0.1:5500', '*'] }))
 app.use(express.json())
 app.use(cookieParser())
-
 app.get('/', (req: Request, res: Response) => {
   res.send('<h1>Hello World</h1>')
 })
 // app.use(verifyUser)
 app.use('/api/courses', uploadRoute)
-app.use('/api/courses', coursesRoute)
-app.use('/api/courses', chapterRoute)
-app.use('/api/categories', categoriesRoute)
-app.use('/api/attachments', attachmentRoute)
+app.use('/api/courses', verifyUser, coursesRoute)
+app.use('/api/courses', verifyUser, chapterRoute)
+app.use('/api/categories', verifyUser, categoriesRoute)
+app.use('/api/attachments', verifyUser, attachmentRoute)
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`)
