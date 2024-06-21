@@ -50,3 +50,15 @@ export const updateCourse = async (req: express.Request, res: express.Response) 
     return res.status(500).send('Internal Server Error')
   }
 }
+
+export const getCourses = async (req: express.Request, res: express.Response) => {
+  try {
+    const { userId } = req.body
+    const courses = await db.course.findMany({ where: { userId: userId }, orderBy: { createdAt: 'desc' } })
+
+    return res.status(201).json(courses)
+  } catch (error) {
+    console.log('[CourseController][getCourses][Error]', error)
+    return res.status(500).send('Internal Server Error')
+  }
+}
