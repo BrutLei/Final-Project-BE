@@ -132,7 +132,7 @@ export const updateChapter = async (req: express.Request, res: express.Response)
 export const removeVideo = async (req: express.Request, res: express.Response) => {
   try {
     const { courseId, chapterId } = req.params
-    const { userId, videoUrl } = req.body
+    const { userId } = req.body
 
     if (!userId) {
       return res.status(401).send('Unauthorized')
@@ -163,6 +163,110 @@ export const removeVideo = async (req: express.Request, res: express.Response) =
     }
   } catch (error) {
     console.log('[ChapterController][removeVideo][Error]', error)
+    return res.status(500).send('Internal Server Error')
+  }
+}
+
+export const removeChapter = async (req: express.Request, res: express.Response) => {
+  try {
+    const { courseId, chapterId } = req.params
+    const { userId } = req.body
+
+    if (!userId) {
+      return res.status(401).send('Unauthorized')
+    }
+
+    const courseOwner = await db.course.findUnique({
+      where: { id: courseId, userId: userId }
+    })
+
+    if (!courseOwner) {
+      return res.status(403).send('Unauthorized')
+    }
+
+    const videoPath = path.join(__dirname, `../../uploads/videos/hls/${chapterId}`)
+    if (fs.existsSync(videoPath)) {
+      fs.readdirSync(videoPath).forEach((file) => {
+        fs.unlinkSync(`${videoPath}/${file}`)
+      })
+    }
+
+    const deleteChapter = await db.chapter.delete({
+      where: { id: chapterId }
+    })
+
+    const publishedChapterInCourse = await db.chapter.findMany({
+      where: { courseId: courseId, isPublished: true }
+    })
+
+    if (!publishedChapterInCourse.length) {
+      await db.course.update({
+        where: { id: courseId },
+        data: { isPublished: false }
+      })
+    }
+
+    return res.status(204).json(deleteChapter)
+  } catch (error) {
+    console.log('[ChapterController][removeChapter][Error]', error)
+    return res.status(500).send('Internal Server Error')
+  }
+}
+
+export const publishChapter = async (req: express.Request, res: express.Response) => {
+  try {
+    const { courseId, chapterId } = req.params
+    const { userId } = req.body
+
+    if (!userId) {
+      return res.status(401).send('Unauthorized')
+    }
+
+    const courseOwner = await db.course.findUnique({
+      where: { id: courseId, userId: userId }
+    })
+
+    if (!courseOwner) {
+      return res.status(403).send('Unauthorized')
+    }
+
+    const chapter = await db.chapter.update({
+      where: { id: chapterId },
+      data: { isPublished: true }
+    })
+
+    return res.status(201).json(chapter)
+  } catch (error) {
+    console.log('[ChapterController][publishChapter][Error]', error)
+    return res.status(500).send('Internal Server Error')
+  }
+}
+
+export const unpublishChapter = async (req: express.Request, res: express.Response) => {
+  try {
+    const { courseId, chapterId } = req.params
+    const { userId } = req.body
+
+    if (!userId) {
+      return res.status(401).send('Unauthorized')
+    }
+
+    const courseOwner = await db.course.findUnique({
+      where: { id: courseId, userId: userId }
+    })
+
+    if (!courseOwner) {
+      return res.status(403).send('Unauthorized')
+    }
+
+    const chapter = await db.chapter.update({
+      where: { id: chapterId },
+      data: { isPublished: false }
+    })
+
+    return res.status(201).json(chapter)
+  } catch (error) {
+    console.log('[ChapterController][unpublishChapter][Error]', error)
     return res.status(500).send('Internal Server Error')
   }
 }

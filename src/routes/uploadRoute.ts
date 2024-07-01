@@ -1,4 +1,3 @@
-import { verifyUser } from '@/middleware/clerk-authenticate'
 import { db } from '@/utilz/db'
 import express from 'express'
 import fs from 'fs'
@@ -50,7 +49,7 @@ const cbUploadAttachment = attachmentUpload.array('attachments')
 
 uploadRoute.patch(
   '/:courseId/upload-image',
-  verifyUser,
+
   cbUploadImage,
   async (req: express.Request, res: express.Response) => {
     try {
@@ -93,7 +92,7 @@ uploadRoute.patch(
   }
 )
 
-uploadRoute.delete('/delete-image/:courseId', verifyUser, async (req: express.Request, res: express.Response) => {
+uploadRoute.delete('/delete-image/:courseId', async (req: express.Request, res: express.Response) => {
   const courseId = req.params.courseId
   if (!courseId) {
     return res.status(400).send('No course id provided')
@@ -140,7 +139,7 @@ uploadRoute.delete('/delete-image/:courseId', verifyUser, async (req: express.Re
 // /api/attachments/:courseId/upload-attachments
 uploadRoute.patch(
   '/:courseId/upload-attachments',
-  verifyUser,
+
   cbUploadAttachment,
   async (req: express.Request, res: express.Response) => {
     try {
