@@ -3,7 +3,6 @@ import { getCoursesByParams } from '@/utilz/get-courses'
 import { PrismaClient } from '@prisma/client'
 import express from 'express'
 
-// const db = new PrismaClient()
 export const createCourse = async (req: express.Request, res: express.Response) => {
   try {
     const { userId, title } = req.body
@@ -175,7 +174,8 @@ export const getCourse = async (req: express.Request, res: express.Response) => 
           select: {
             id: true,
             title: true,
-            isFree: true
+            isFree: true,
+            videoUrl: true
           },
           orderBy: {
             position: 'asc'

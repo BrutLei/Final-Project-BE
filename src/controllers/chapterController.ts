@@ -270,3 +270,32 @@ export const unpublishChapter = async (req: express.Request, res: express.Respon
     return res.status(500).send('Internal Server Error')
   }
 }
+
+export const fetchChapterVideo = async (req: express.Request, res: express.Response) => {
+  try {
+    const { courseId, chapterId, userId } = req.params
+
+    const chapter = await db.chapter.findFirst({
+      where: { courseId: courseId, id: chapterId, isPublished: true }
+    })
+
+    const userPurchase = await db.purchase.findUnique({
+      where: {
+        userId_courseId: {
+          userId: userId,
+          courseId: courseId
+        }
+      }
+    })
+    const isPurchased = userPurchase ? true : false
+
+    if (!chapter) {
+      return res.status(404).send('Chapter not found')
+    } else {
+      return res.status(200).json({ ...chapter, isPurchased })
+    }
+  } catch (error) {
+    console.log('[ChapterController][fetchChapterVideoForPurchasedCourse][Error]', error)
+    return res.status(500).send('Internal Server Error')
+  }
+}

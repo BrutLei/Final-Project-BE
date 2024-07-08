@@ -2,6 +2,7 @@ import express from 'express'
 import {
   createChapter,
   fetchChapter,
+  fetchChapterVideo,
   fetchChapters,
   publishChapter,
   removeChapter,
@@ -16,6 +17,7 @@ import { cbUploadVideo } from './uploadRoute'
 const chapterRoute = express.Router()
 chapterRoute.get('/:courseId/chapters', fetchChapters)
 chapterRoute.get('/:courseId/chapters/:chapterId', fetchChapter)
+chapterRoute.get('/:courseId/chapter/:chapterId/user/:userId', fetchChapterVideo)
 chapterRoute.post('/:courseId/chapters', createChapter)
 chapterRoute.put('/:courseId/chapters/reorder', reorderChapters)
 chapterRoute.patch('/:courseId/chapters/:chapterId', updateChapter)
