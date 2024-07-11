@@ -1,6 +1,6 @@
 import { db } from '@/utilz/db'
 import { getCoursesByParams } from '@/utilz/get-courses'
-import { PrismaClient } from '@prisma/client'
+import { getProgress } from '@/utilz/get-progress'
 import express from 'express'
 
 export const createCourse = async (req: express.Request, res: express.Response) => {
@@ -148,8 +148,14 @@ export const deleteCourse = async (req: express.Request, res: express.Response) 
 
 export const getCourses = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId, title, categoryId } = req.body
-    const course = await getCoursesByParams({ userId, title, categoryId })
+    const { title, categoryId } = req.query
+    const { userId } = req.params
+
+    const course = await getCoursesByParams({
+      userId: userId as string,
+      title: title as string,
+      categoryId: categoryId as string
+    })
     return res.status(201).json(course)
   } catch (error) {
     console.log('[CourseController][getCoursesWithParams][Error]', error)
@@ -163,19 +169,15 @@ export const getCourse = async (req: express.Request, res: express.Response) => 
     const course = await db.course.findUnique({
       where: {
         id: courseId,
-        isPublished: true,
-        chapters: { some: { isPublished: true } }
+        isPublished: true
       },
       include: {
         chapters: {
           where: {
             isPublished: true
           },
-          select: {
-            id: true,
-            title: true,
-            isFree: true,
-            videoUrl: true
+          include: {
+            userProgress: { where: { userId: userId } }
           },
           orderBy: {
             position: 'asc'
@@ -184,24 +186,26 @@ export const getCourse = async (req: express.Request, res: express.Response) => 
       }
     })
     if (!course) {
-      console.log('[CourseController][getCourse][Error]', 'Course not found')
-
-      return res.status(404).json({ error: 'Course not found' })
+      res.redirect('back')
     }
-    const userPurchase = await db.purchase.findUnique({
+
+    const progressCount = await getProgress(userId, courseId)
+
+    const purchase = await db.purchase.findUnique({
       where: {
         userId_courseId: {
-          userId: userId,
-          courseId: courseId
+          courseId: courseId,
+          userId: userId
         }
       }
     })
 
-    const isPurchase = userPurchase ? true : false
+    const isPurchased = !!purchase
 
     return res.status(201).json({
       ...course,
-      isPurchase
+      isPurchased: isPurchased,
+      progressCount: progressCount
     })
   } catch (error) {
     console.log('[CourseController][getCourse][Error]', error)

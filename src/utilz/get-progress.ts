@@ -2,32 +2,26 @@ import { db } from './db'
 
 export const getProgress = async (userId: string, courseId: string): Promise<number> => {
   try {
+    // get all published chapters of course
     const publishedChapters = await db.chapter.findMany({
-      where: {
-        courseId: courseId,
-        isPublished: true
-      },
-      select: {
-        id: true
-      }
+      where: { courseId, isPublished: true }
     })
 
     const publishedChapterIds = publishedChapters.map((chapter) => chapter.id)
 
     const validCompletedChapters = await db.userProgress.count({
       where: {
-        userId: userId,
-        chapterId: {
-          in: publishedChapterIds
-        },
+        userId,
+        chapterId: { in: publishedChapterIds },
         isCompleted: true
       }
     })
 
-    const progressPercentage = (validCompletedChapters / publishedChapterIds.length) * 100
+    const progressPercentage = (validCompletedChapters / publishedChapters.length) * 100
+
     return progressPercentage
   } catch (error) {
-    console.log('[utilz][getProgress][error]', error)
+    console.log(`utilz/get-progress: Error: ${error}`)
     return 0
   }
 }

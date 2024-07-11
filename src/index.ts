@@ -4,6 +4,8 @@ import cookieParser from 'cookie-parser'
 import { env } from 'process'
 import dotenv from 'dotenv'
 
+dotenv.config()
+
 import uploadRoute from './routes/uploadRoute'
 import { coursesRoute } from './routes'
 import categoriesRoute from './routes/categoriesRoute'
@@ -11,8 +13,6 @@ import attachmentRoute from './routes/attachmentsRoute'
 import chapterRoute from './routes/chapterRoute'
 import webhookRoute from './routes/webhookRoute'
 import paymentRoute from './routes/paymentRoute'
-
-dotenv.config()
 
 const port = process.env.PORT || 3001
 const app: Application = express()

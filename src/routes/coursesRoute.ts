@@ -17,7 +17,7 @@ coursesRoute
   .post('/', createCourse)
   .get('/user/:userId/get-course/:courseId', getCourse)
   .get('/get-list', getCoursesList)
-  .get('/get-courses', getCourses)
+  .get('/get-courses/:userId', getCourses)
   .get('/:courseId', findCourse)
   .patch('/:courseId/publish', publishCourse)
   .patch('/:courseId/unpublish', unpublishCourse)
