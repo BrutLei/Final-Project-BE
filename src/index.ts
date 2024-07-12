@@ -17,13 +17,19 @@ import paymentRoute from './routes/paymentRoute'
 const port = process.env.PORT || 3001
 const app: Application = express()
 
-app.use(express.static('public'))
 app.use(
   cors({
     credentials: true,
-    origin: [String(env.ORIGIN), String(env.ORIGIN2), 'http://127.0.0.1:5500', 'http://localhost:5173', '*']
+    origin: [
+      String(env.ORIGIN),
+      String(env.ORIGIN2),
+      'https://final-project-doc6kno0c-brutleis-projects.vercel.app',
+      'http://localhost:5173',
+      '*'
+    ]
   })
 )
+app.use(express.static('public'))
 app.use('/api/webhook', express.raw({ type: 'application/json' }), webhookRoute)
 app.use(express.json())
 app.use(cookieParser())
