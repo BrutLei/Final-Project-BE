@@ -166,6 +166,33 @@ export const fetchChapter = async (req: express.Request, res: express.Response) 
   }
 }
 
+export const updateChapterProgress = async (req: express.Request, res: express.Response) => {
+  try {
+    const { courseId, chapterId } = req.params
+    const { userId, isCompleted } = req.body
+    const userProgress = await db.userProgress.upsert({
+      where: {
+        userId_chapterId: {
+          userId,
+          chapterId
+        }
+      },
+      update: {
+        isCompleted
+      },
+      create: {
+        userId,
+        chapterId,
+        isCompleted
+      }
+    })
+    return res.status(201).json(userProgress)
+  } catch (error) {
+    console.log('[ChapterController][updateChapterProgress][Error]', error)
+    return res.status(500).send('Internal Server Error')
+  }
+}
+
 export const updateChapter = async (req: express.Request, res: express.Response) => {
   try {
     const { courseId, chapterId } = req.params

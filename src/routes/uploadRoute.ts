@@ -182,5 +182,6 @@ uploadRoute.patch(
 
 uploadRoute.use('/images', express.static(path.join(__dirname, '../..')))
 uploadRoute.use('/videos', express.static(path.join(__dirname, '../..')))
+uploadRoute.use('/', express.static(path.join(__dirname, '../..')))
 
 export default uploadRoute
