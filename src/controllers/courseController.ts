@@ -1,5 +1,5 @@
 import { db } from '@/utilz/db'
-import { getCoursesByParams } from '@/utilz/get-courses'
+import { getCoursesByParams, getCoursesForDashboard } from '@/utilz/get-courses'
 import { getProgress } from '@/utilz/get-progress'
 import express from 'express'
 
@@ -209,6 +209,18 @@ export const getCourse = async (req: express.Request, res: express.Response) => 
     })
   } catch (error) {
     console.log('[CourseController][getCourse][Error]', error)
+    return res.status(500).send('Internal Server Error')
+  }
+}
+
+export const getDashboardCourses = async (req: express.Request, res: express.Response) => {
+  try {
+    const { userId } = req.params
+
+    const courses = await getCoursesForDashboard(userId as string)
+    return res.status(201).json(courses)
+  } catch (error) {
+    console.log('[CourseController][getCoursesForDashboard][Error]', error)
     return res.status(500).send('Internal Server Error')
   }
 }

@@ -6,7 +6,8 @@ import {
   publishCourse,
   unpublishCourse,
   updateCourse,
-  getCourse
+  getCourse,
+  getDashboardCourses
 } from '@controllers/courseController'
 
 import express from 'express'
@@ -17,6 +18,7 @@ coursesRoute
   .post('/', createCourse)
   .get('/user/:userId/get-course/:courseId', getCourse)
   .get('/get-list', getCoursesList)
+  .get('/dashboard', getDashboardCourses)
   .get('/get-courses/:userId', getCourses)
   .get('/:courseId', findCourse)
   .patch('/:courseId/publish', publishCourse)
