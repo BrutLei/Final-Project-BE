@@ -16,10 +16,18 @@ type GetCourses = {
 }
 
 export const getCoursesForDashboard = async (userId: string) => {
+  if (!userId) {
+    return { completedCourses: [], inProgressCourses: [], coursesWithProgress: [], userId: '' }
+  }
   try {
     const purchasedCourses = await db.course.findMany({
       where: {
-        isPublished: true
+        isPublished: true,
+        purchase: {
+          some: {
+            userId: userId
+          }
+        }
       },
       include: {
         category: true,
@@ -65,7 +73,8 @@ export const getCoursesForDashboard = async (userId: string) => {
     return {
       completedCourses,
       inProgressCourses,
-      coursesWithProgress
+      coursesWithProgress,
+      userId
     }
   } catch (error) {
     console.log('[utilz][getCourses][error]', error)
